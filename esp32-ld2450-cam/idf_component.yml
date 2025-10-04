@@ -1,0 +1,7 @@
+version: 0.1.0
+
+dependencies:
+  idf: ">=4.4"
+  espressif/esp32-camera: 
+    version: ">=2.0.3"
+    override_path: null
