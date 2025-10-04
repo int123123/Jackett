@@ -1,0 +1,83 @@
+menu "LD2450 CAM MQTT App"
+
+config APP_WIFI_SSID
+    string "WiFi SSID"
+    default "YOUR_SSID"
+    help
+        WiFi SSID for station mode.
+
+config APP_WIFI_PASSWORD
+    string "WiFi Password"
+    default "YOUR_PASSWORD"
+    help
+        WiFi password for station mode.
+
+config APP_MQTT_URI
+    string "MQTT broker URI"
+    default "mqtt://192.168.1.100:1883"
+    help
+        Example: mqtt://host:1883 or mqtts://host:8883
+
+config APP_MQTT_USERNAME
+    string "MQTT username"
+    default ""
+
+config APP_MQTT_PASSWORD
+    string "MQTT password"
+    default ""
+
+config APP_LD2450_UART_PORT
+    int "LD2450 UART port (0-2)"
+    range 0 2
+    default 2
+
+config APP_LD2450_BAUD
+    int "LD2450 baud rate"
+    default 256000
+
+config APP_LD2450_PIN_TX
+    int "LD2450 UART TX GPIO"
+    default 13
+
+config APP_LD2450_PIN_RX
+    int "LD2450 UART RX GPIO"
+    default 14
+
+config APP_RADAR_POWER_GPIO
+    int "GPIO to control radar power (optional)"
+    default -1
+    help
+        Use -1 if not wired. If >=0, HIGH turns radar on by default (depends on wiring).
+
+config APP_CAMERA_PIXEL_FORMAT
+    int "Camera pixel format (0=JPEG,1=RGB565)"
+    range 0 1
+    default 0
+
+config APP_CAMERA_FRAME_SIZE
+    int "Camera frame size (0=QVGA,1=VGA,2=SVGA,3=XGA,4=SXGA,5=UXGA)"
+    range 0 5
+    default 1
+
+config APP_PERSON_LOSS_TIMEOUT_MS
+    int "Delay before turning camera off after no person"
+    default 3000
+
+config APP_LD2450_MOTION_HOLD_MS
+    int "Hold radar motion 'true' this many ms after last packet"
+    default 500
+
+config APP_USE_TFLM
+    bool "Use TensorFlow Lite Micro person detection"
+    default n
+    help
+        When enabled, camera person detection should use TFLM model.
+        You must add a TFLM model and dependency manually.
+
+config APP_TFLM_SCORE_THRESHOLD
+    int "TFLM person score threshold (0-255)"
+    range 0 255
+    default 180
+    depends on APP_USE_TFLM
+
+endmenu
