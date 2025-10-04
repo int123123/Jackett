@@ -63,4 +63,21 @@ config APP_PERSON_LOSS_TIMEOUT_MS
     int "Delay before turning camera off after no person"
     default 3000
 
+config APP_LD2450_MOTION_HOLD_MS
+    int "Hold radar motion 'true' this many ms after last packet"
+    default 500
+
+config APP_USE_TFLM
+    bool "Use TensorFlow Lite Micro person detection"
+    default n
+    help
+        When enabled, camera person detection should use TFLM model.
+        You must add a TFLM model and dependency manually.
+
+config APP_TFLM_SCORE_THRESHOLD
+    int "TFLM person score threshold (0-255)"
+    range 0 255
+    default 180
+    depends on APP_USE_TFLM
+
 endmenu

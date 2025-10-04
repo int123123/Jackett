@@ -102,18 +102,23 @@ bool camera_check_person(camera_status_t *out_status)
         return false;
     }
 
-    // Placeholder: use naive heuristic as we do not link ESP-WHO here.
-    // A simple motion proxy: if frame size differs or brightness shifts, assume "person".
-    static size_t last_len = 0;
     bool person = false;
-    if (fb->len > 0) {
-        if (last_len == 0) last_len = fb->len;
-        size_t diff = (fb->len > last_len) ? (fb->len - last_len) : (last_len - fb->len);
-        if (diff > (fb->len / 50)) { // >2% change
-            person = true;
+    #if CONFIG_APP_USE_TFLM
+        // TODO: call TFLM inference with fb (convert to RGB565/QVGA as needed)
+        // person = (inference_score >= CONFIG_APP_TFLM_SCORE_THRESHOLD);
+        person = false; // placeholder until model integrated
+    #else
+        // Fallback heuristic when TFLM disabled
+        static size_t last_len = 0;
+        if (fb->len > 0) {
+            if (last_len == 0) last_len = fb->len;
+            size_t diff = (fb->len > last_len) ? (fb->len - last_len) : (last_len - fb->len);
+            if (diff > (fb->len / 50)) { // >2% change
+                person = true;
+            }
+            last_len = fb->len;
         }
-        last_len = fb->len;
-    }
+    #endif
 
     esp_camera_fb_return(fb);
     if (out_status) out_status->person_visible = person;

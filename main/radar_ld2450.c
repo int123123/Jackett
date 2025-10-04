@@ -18,6 +18,7 @@ static const char *TAG = "ld2450";
 
 static volatile bool s_motion_detected = false;
 static ld2450_event_t s_last_evt = {0};
+static volatile int64_t s_last_packet_us = 0;
 
 static void parse_ld2450_bytes(const uint8_t *data, size_t len)
 {
@@ -27,6 +28,7 @@ static void parse_ld2450_bytes(const uint8_t *data, size_t len)
         s_motion_detected = true;
         s_last_evt.motion_detected = true;
         s_last_evt.timestamp_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+        s_last_packet_us = esp_timer_get_time();
     }
 }
 
@@ -84,12 +86,18 @@ void ld2450_stop(void)
 
 bool ld2450_get_motion_and_clear(ld2450_event_t *out_event)
 {
-    if (s_motion_detected) {
-        s_motion_detected = false;
-        if (out_event) *out_event = s_last_evt;
-        return true;
+    // Motion is considered true if there was recent packet activity within hold window
+    int64_t now = esp_timer_get_time();
+    int64_t hold_us = ((int64_t)CONFIG_APP_LD2450_MOTION_HOLD_MS) * 1000LL;
+    bool motion = false;
+    if (s_last_packet_us > 0 && (now - s_last_packet_us) <= hold_us) {
+        motion = true;
     }
-    return false;
+    if (motion && out_event) {
+        *out_event = s_last_evt;
+    }
+    // do not clear; we keep continuous view based on time window
+    return motion;
 }
 
 void ld2450_power_set(bool on)

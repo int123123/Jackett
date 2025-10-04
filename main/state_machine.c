@@ -11,12 +11,13 @@
 static const char *TAG = "fsm";
 
 typedef enum {
-    ST_RADAR_ACTIVE = 0,
+    ST_IDLE = 0,
     ST_CAMERA_ACTIVE
 } app_state_t;
 
-static app_state_t s_state = ST_RADAR_ACTIVE;
+static app_state_t s_state = ST_IDLE;
 static int64_t s_last_person_seen_us = 0;
+static int64_t s_camera_start_us = 0;
 
 static void publish_state(const char *what, const char *value)
 {
@@ -33,19 +34,15 @@ static void fsm_task(void *arg)
 
     while (1) {
         switch (s_state) {
-            case ST_RADAR_ACTIVE: {
+            case ST_IDLE: {
                 ld2450_event_t evt;
-                if (ld2450_get_motion_and_clear(&evt)) {
-                    publish_state("radar/motion", "1");
-                    ld2450_stop();
-                    ld2450_power_set(false);
+                bool motion = ld2450_get_motion_and_clear(&evt);
+                publish_state("radar/motion", motion ? "1" : "0");
+                if (motion) {
                     if (camera_init() == 0) {
                         s_state = ST_CAMERA_ACTIVE;
+                        s_camera_start_us = esp_timer_get_time();
                         publish_state("camera/state", "on");
-                    } else {
-                        // fallback: re-enable radar if camera failed
-                        ld2450_power_set(true);
-                        ld2450_start();
                     }
                 }
                 vTaskDelay(pdMS_TO_TICKS(50));
@@ -54,6 +51,11 @@ static void fsm_task(void *arg)
             case ST_CAMERA_ACTIVE: {
                 camera_status_t st;
                 bool person = camera_check_person(&st);
+                // keep camera on if person visible OR radar still reports motion
+                ld2450_event_t evt;
+                bool motion = ld2450_get_motion_and_clear(&evt);
+                publish_state("radar/motion", motion ? "1" : "0");
+
                 if (person) {
                     s_last_person_seen_us = esp_timer_get_time();
                     publish_state("camera/person", "1");
@@ -63,13 +65,10 @@ static void fsm_task(void *arg)
                     if (s_last_person_seen_us == 0) {
                         s_last_person_seen_us = now;
                     }
-                    if ((now - s_last_person_seen_us) > person_loss_timeout_us) {
+                    if (!motion && (now - s_last_person_seen_us) > person_loss_timeout_us) {
                         camera_deinit();
                         publish_state("camera/state", "off");
-                        ld2450_power_set(true);
-                        ld2450_start();
-                        s_state = ST_RADAR_ACTIVE;
-                        publish_state("radar/motion", "0");
+                        s_state = ST_IDLE;
                     }
                 }
                 vTaskDelay(pdMS_TO_TICKS(150));
@@ -81,7 +80,7 @@ static void fsm_task(void *arg)
 
 void app_state_machine_start(void)
 {
-    s_state = ST_RADAR_ACTIVE;
+    s_state = ST_IDLE;
     s_last_person_seen_us = 0;
     xTaskCreate(fsm_task, "fsm", 4096, NULL, 5, NULL);
 }
