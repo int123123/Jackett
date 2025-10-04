@@ -1,0 +1,121 @@
+menu "Application Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+    default "YOUR_SSID"
+
+config WIFI_PASSWORD
+    string "WiFi password"
+    default "YOUR_PASSWORD"
+
+config MQTT_BROKER_URI
+    string "MQTT broker URI"
+    default "mqtt://192.168.1.10"
+
+config MQTT_BASE_TOPIC
+    string "MQTT base topic"
+    default "sensors"
+
+config MQTT_USERNAME
+    string "MQTT username"
+    default ""
+
+config MQTT_PASSWORD
+    string "MQTT password"
+    default ""
+
+config DELAY_AFTER_NO_PERSON_MS
+    int "Delay after person lost (ms)"
+    default 2000
+    range 0 60000
+
+config MIN_CAMERA_HOLD_MS
+    int "Minimal camera hold after radar trigger (ms)"
+    default 1500
+    range 0 60000
+
+config PERSON_CONFIRM_FRAMES
+    int "Frames to confirm person"
+    default 2
+    range 1 30
+
+config PERSON_LOST_FRAMES
+    int "Frames before person considered lost"
+    default 3
+    range 1 60
+
+menu "Camera"
+
+config CAMERA_WARMUP_MS
+    int "Warmup frames delay (ms)"
+    default 500
+    range 0 5000
+
+config PERSON_MIN_SKIN_RATIO_PERCENT
+    int "Min skin ratio percent for presence"
+    default 1
+    range 0 30
+
+config CAMERA_FRAMESIZE_QQVGA
+    bool "Use QQVGA (160x120) instead of QVGA"
+    default y
+
+config CAMERA_CUSTOM_PINS
+    bool "Custom camera pins (override AI-Thinker)"
+    default n
+
+endmenu
+
+menu "LD2450 Radar"
+
+choice LD2450_METHOD
+    prompt "LD2450 method"
+    default LD2450_METHOD_UART
+    help
+        Choose how to read presence from LD2450
+
+config LD2450_METHOD_GPIO
+    bool "GPIO digital input"
+
+config LD2450_METHOD_UART
+    bool "UART frames"
+
+endchoice
+
+config LD2450_POWER_GPIO
+    int "Radar power control GPIO (-1 to disable)"
+    default -1
+    range -1 39
+
+if LD2450_METHOD_GPIO
+config LD2450_PRESENCE_GPIO
+    int "Presence input GPIO"
+    default 33
+    range 0 39
+config LD2450_PRESENCE_ACTIVE_HIGH
+    bool "Presence active-high"
+    default y
+endif
+
+if LD2450_METHOD_UART
+config LD2450_UART_NUM
+    int "UART number (0..2)"
+    default 2
+    range 0 2
+config LD2450_UART_TX
+    int "UART TX GPIO"
+    default 14
+    range -1 39
+config LD2450_UART_RX
+    int "UART RX GPIO"
+    default 15
+    range -1 39
+config LD2450_UART_BAUD
+    int "UART baud rate"
+    default 115200
+    range 9600 460800
+endif
+
+endmenu
+
+endmenu
