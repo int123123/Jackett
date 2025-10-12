@@ -1,6 +1,8 @@
 # Target
 CONFIG_IDF_TARGET="esp32c3"
 
+# Target and Bluetooth stack
+CONFIG_IDF_TARGET="esp32c3"
 # Use NimBLE (recommended for ESP32-C3)
 CONFIG_BT_ENABLED=y
 CONFIG_BT_NIMBLE_ENABLED=y
